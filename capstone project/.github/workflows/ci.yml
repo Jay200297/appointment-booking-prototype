@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run DB migrations
+        run: |
+          echo "Applying SQL migrations from migrations/"
+          for f in migrations/*.sql; do
+            echo "-> $f"
+            psql "$DATABASE_URL" -f "$f"
+          done
+
+      - name: Run backend tests
+        working-directory: backend-node
+        run: |
+          npm ci
+          npm test -- --test-reporter=spec
+
+      - name: Build frontend
+        working-directory: react-patient-booking
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Playwright and browsers
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: Start backend and frontend
+        run: |
+          # start backend
+          (cd backend-node && nohup npm start >../backend.log 2>&1 &) 
+          # start frontend (Vite)
+          (cd react-patient-booking && nohup npm run dev >../frontend.log 2>&1 &)
+          # wait for servers
+          until curl -sSf http://localhost:8000/ >/dev/null; do echo "waiting for backend"; sleep 1; done
+          until curl -sSf http://localhost:3000/ >/dev/null; do echo "waiting for frontend"; sleep 1; done
+
+      - name: Run Playwright tests
+        working-directory: e2e
+        run: |
+          npx playwright test --reporter=list

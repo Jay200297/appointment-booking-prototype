@@ -1,0 +1,88 @@
+version: "3.9"
+
+# One-command local setup. From the project root, run:
+#   docker compose up --build
+# Then open http://localhost:8001 in your browser.
+#
+# What happens automatically:
+#   1. Postgres starts and waits until it's ready to accept connections
+#   2. The "migrate" service runs every file in migrations/, in order,
+#      exactly once (skips ones already applied on re-runs)
+#   3. The backend starts once migrations succeed
+#   4. The frontend builds and serves once the backend is reachable
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+      POSTGRES_DB: appointments
+    ports:
+      - "5432:5432"
+    volumes:
+      - clinic_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appointments"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: postgres:16
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations:ro
+    environment:
+      PGPASSWORD: apppassword
+    entrypoint: >
+      bash -c "
+        psql -h db -U appuser -d appointments -c 'CREATE TABLE IF NOT EXISTS schema_migrations (filename text PRIMARY KEY, applied_at timestamptz DEFAULT now());' &&
+        for f in /migrations/*.sql; do
+          name=$$(basename \"$$f\");
+          already=$$(psql -h db -U appuser -d appointments -tAc \"SELECT 1 FROM schema_migrations WHERE filename='$$name'\");
+          if [ \"$$already\" = '1' ]; then
+            echo \"Skipping $$name (already applied)\";
+          else
+            echo \"Applying $$name...\";
+            psql -h db -U appuser -d appointments -f \"$$f\" || exit 1;
+            psql -h db -U appuser -d appointments -c \"INSERT INTO schema_migrations (filename) VALUES ('$$name')\" || exit 1;
+          fi;
+        done;
+        echo 'All migrations applied.'
+      "
+
+  backend:
+    build:
+      context: ./backend-node
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://appuser:apppassword@db:5432/appointments
+      DATABASE_SSL: "false"
+      PORT: 8000
+      JWT_SECRET: ${JWT_SECRET:-change-this-before-going-live}
+      JWT_EXPIRY: 1h
+      FRONTEND_URL: http://localhost:8001
+      ENABLE_REMINDER_SCHEDULER: "false"
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./react-patient-booking
+      args:
+        VITE_API_BASE: http://localhost:8000
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8001:8001"
+
+volumes:
+  clinic_db_data:

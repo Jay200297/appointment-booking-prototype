@@ -1,0 +1,25 @@
+Sprint,StoryID,Title,Description,AcceptanceCriteria,StoryPoints
+Sprint 1,S1.1,System architecture & tech stack,"Create system architecture diagram, select tech stack, and infra plan","Diagram and infra choices reviewed by tech lead",5
+Sprint 1,S1.2,Data model design,"Design ERD for Clinic/Provider/Service/Slot/Appointment","ERD + sample migrations available",5
+Sprint 1,S1.3,Booking API (availability & create),"Implement `GET /availability` and `POST /appointments` with idempotency and transactional reservation","End-to-end flow creates appointment and marks slot reserved; unit tests",8
+Sprint 1,S1.4,Repo & CI setup,"Setup repository structure, CI basics, linting","PR created and CI lint passes",2
+Sprint 2,S2.1,Provider availability CRUD,"Implement ProviderAvailability CRUD and recurring exceptions","Admin can create recurring hours and exceptions",5
+Sprint 2,S2.2,Slot generation engine,"Generate slots from availability with buffer and lead-time rules","Generated slots reflect rules; unit tests for edge cases",8
+Sprint 2,S2.3,Provider dashboard (baseline),"Daily view, block/unblock slots UI","UI displays schedule and allows manual overrides",5
+Sprint 2,S2.4,Calendar sync spec,"Design Google/Outlook OAuth and webhook integration stub","OAuth + token storage spec; stubbed webhook endpoint",2
+Sprint 3,S3.1,Patient booking UI,"Responsive booking UI: search → service → slot → book","Usability-tested flow; e2e test",8
+Sprint 3,S3.2,Notification service skeleton,"Queue, worker, and template system for notifications","Worker can enqueue and send emails in dev mode",5
+Sprint 3,S3.3,Confirmation email + SMS,"Integrate email + Twilio SMS for booking confirmations","Booking triggers email + SMS (or simulated SMS)",5
+Sprint 3,S3.4,Notification idempotency & retries,"Idempotency and retry/backoff for notification delivery","Retry policy implemented; metrics emitted",4
+Sprint 4,S4.1,Reschedule & cancel flows,"APIs and UI for rescheduling and cancellations with policy enforcement","Users can reschedule within policy; logs created",5
+Sprint 4,S4.2,Waiting list & auto-fill,"Implement waiting list and auto-fill when cancellations occur","Auto-notify next patient and reserve slot; race-condition tests",6
+Sprint 4,S4.3,Check-in flow,"QR/code-based quick check-in to update appointment status","Check-in updates appointment status and reduces front-desk steps",4
+Sprint 4,S4.4,Audit logging for lifecycle events,"Record create/reschedule/cancel/check-in actions","Audit entries recorded for lifecycle events",3
+Sprint 5,S5.1,Auth & RBAC,"Implement OAuth2/JWT and role-based access control","Role-protected endpoints; auth tests",5
+Sprint 5,S5.2,PHI encryption & retention,"Encrypt PHI at rest, secure backups, and retention policy","DB encryption configured and retention documented",5
+Sprint 5,S5.3,End-to-end & integration tests,"E2E tests covering booking and notifications","CI runs e2e suite and passes threshold",5
+Sprint 5,S5.4,Load testing & tuning,"Load test scheduling service; tune DB indexes/locks","Documented capacity; no double-booking under load",5
+Sprint 6,S6.1,Staging pilot deployment,"Deploy staging pilot, migrate sample clinic data, run pilot scripts","Pilot clinic can book real appointments; feedback logged",6
+Sprint 6,S6.2,Monitoring & tracing,"Prometheus/Grafana dashboards and tracing setup","Dashboards for booking rate, error rate, notification failures",5
+Sprint 6,S6.3,Training materials & runbook,"Create admin docs, training materials, and runbook","Docs available and 1-hour training runbook prepared",5
+Sprint 6,S6.4,Security review & pre-launch checklist,"Conduct security review and prepare pre-launch checklist","Vulnerabilities logged and mitigation plan",4

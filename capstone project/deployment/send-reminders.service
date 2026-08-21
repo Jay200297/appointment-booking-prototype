@@ -1,0 +1,13 @@
+[Unit]
+Description=Clinic Scheduler - Send Reminders Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/project
+ExecStart=/usr/bin/npm run --prefix /path/to/project backend-node:remind || /usr/bin/node /path/to/project/scripts/send_reminders.js --minutes 60
+Restart=on-failure
+User=clinic
+
+[Install]
+WantedBy=multi-user.target
